@@ -1,4 +1,5 @@
 import { DetectedAnomaly, TelemetryPoint, MissionStats } from '../types/telemetry';
+import { CombustionAnomaly, CombustionTelemetryPoint } from '../types/combustion';
 
 export interface AssistantMessage {
   id: string;
@@ -16,14 +17,16 @@ export interface AssistantMessage {
 }
 
 /**
- * Generates an engineering-grade aerospace diagnostic analysis when Gemini API
- * is offline or unavailable, adhering strictly to scientific honesty.
+ * Generates an engineering-grade aerospace & microgravity combustion diagnostic analysis
+ * when Gemini API is offline or unavailable, adhering strictly to scientific honesty.
  */
 export function generateRuleBasedResponse(
   query: string,
   anomalies: DetectedAnomaly[],
   telemetry: TelemetryPoint[],
-  stats: MissionStats
+  stats: MissionStats,
+  combustionData: CombustionTelemetryPoint[] = [],
+  combustionAnomalies: CombustionAnomaly[] = []
 ): {
   text: string;
   uncertaintyRating: 'LOW' | 'MEDIUM' | 'HIGH';
@@ -31,6 +34,116 @@ export function generateRuleBasedResponse(
   suggestedPrompts: string[];
 } {
   const q = query.toLowerCase();
+
+  // 0. Microgravity Combustion / NASA PSI-100 SAFFIRE-III Queries
+  if (
+    q.includes('saffire') ||
+    q.includes('combustion') ||
+    q.includes('flame') ||
+    q.includes('fire') ||
+    q.includes('smoke') ||
+    q.includes('radiometer') ||
+    q.includes('igniter') ||
+    q.includes('anemometer') ||
+    q.includes('psi-100') ||
+    q.includes('microgravity') ||
+    q.includes('compare real')
+  ) {
+    let peakRad = -Infinity;
+    let peakRadTime = 'N/A';
+    let peakSmoke = -Infinity;
+    let peakSmokeTime = 'N/A';
+    let maxAnem = -Infinity;
+    let ign1Peak = -Infinity;
+    let ign1Time = 'N/A';
+    let ign2Peak = -Infinity;
+    let ign2Time = 'N/A';
+
+    for (const pt of combustionData) {
+      if (pt.radiometerPeak !== null && pt.radiometerPeak > peakRad) {
+        peakRad = pt.radiometerPeak;
+        peakRadTime = pt.elapsedLabel;
+      }
+      if (pt.smokeScattering2 !== null && pt.smokeScattering2 > peakSmoke) {
+        peakSmoke = pt.smokeScattering2;
+        peakSmokeTime = pt.elapsedLabel;
+      }
+      if (pt.anemometer1 !== null && pt.anemometer1 > maxAnem) maxAnem = pt.anemometer1;
+      if (pt.anemometer2 !== null && pt.anemometer2 > maxAnem) maxAnem = pt.anemometer2;
+      if (pt.sample1IgniterCurrent !== null && pt.sample1IgniterCurrent > ign1Peak) {
+        ign1Peak = pt.sample1IgniterCurrent;
+        ign1Time = pt.elapsedLabel;
+      }
+      if (pt.sample2IgniterCurrent !== null && pt.sample2IgniterCurrent > ign2Peak) {
+        ign2Peak = pt.sample2IgniterCurrent;
+        ign2Time = pt.elapsedLabel;
+      }
+    }
+
+    const radEvents = combustionAnomalies.filter((a) => a.method === 'RADIOMETRIC_EXCURSION');
+    const smkEvents = combustionAnomalies.filter((a) => a.method === 'SMOKE_BREAKTHROUGH');
+
+    if (q.includes('compare real') || q.includes('synthetic')) {
+      return {
+        text: `### Data Provenance Comparison: Real NASA PSI-100 vs. Synthetic AURA-SAT-4 Demo\n\n` +
+          `**1. Real NASA Experimental Data (NASA PSI-100 · SAFFIRE-III, DOI: 10.60555/040q-4h36):**\n` +
+          `• **Source:** Official NASA Physical Sciences Informatics portal (\`psi.nasa.gov\`), Cygnus OA-7 microgravity combustion tests.\n` +
+          `• **Measured Frames Loaded:** ${combustionData.length} aligned 2-second frames with peak Radiometer flux **${peakRad > -Infinity ? peakRad.toFixed(2) : 'N/A'} EU** (@ ${peakRadTime}) and peak Cygnus Smoke Scattering **${peakSmoke > -Infinity ? peakSmoke.toFixed(3) : 'N/A'}** (@ ${peakSmokeTime}).\n` +
+          `• **Detector Isolation:** Evaluated exclusively with combustion rules (igniter pulses, radiometer Z-scores, smoke scattering, anemometer airflow).\n\n` +
+          `**2. Synthetic Spacecraft Demonstration Data (AURA-SAT-4):**\n` +
+          `• **Source:** Deterministic 24-hour LEO orbital mechanics simulator (${telemetry.length} frames, Health Score ${stats.healthScore}%).\n` +
+          `• **Purpose:** Demonstrates spacecraft EPS/TCS/ADCS/TT&C anomaly detection and hypothetical fault simulation without claiming live orbital telemetry.\n\n` +
+          `**3. AI-Generated Interpretations:**\n` +
+          `• Both datasets use separate physical models; causal explanations are presented strictly as working engineering hypotheses with stated sensor limitations.`,
+        uncertaintyRating: 'LOW',
+        suggestedPrompts: [
+          'Analyze NASA SAFFIRE-III radiometer & ignition sequence',
+          'Assess microgravity fire risks from Cygnus smoke scattering peak',
+          'What sensors are missing from the SAFFIRE-III EU table?',
+        ],
+      };
+    }
+
+    return {
+      text: `### Microgravity Fire Safety Analysis — Real NASA PSI-100 (SAFFIRE-III)\n\n` +
+        `**1. Measured NASA Experimental Observations (${combustionData.length} aligned 2s frames):**\n` +
+        `• **Ignition Pulses:** Sample 2 igniter peaked at **${ign2Peak > -Infinity ? ign2Peak.toFixed(2) : 'N/A'} A** (${ign2Time}); Sample 1 igniter peaked at **${ign1Peak > -Infinity ? ign1Peak.toFixed(2) : 'N/A'} A** (${ign1Time}).\n` +
+        `• **Radiometric Flame Output:** Peak Radiometer reading reached **${peakRad > -Infinity ? peakRad.toFixed(2) : 'N/A'} EU** at **t=${peakRadTime}** across ${radEvents.length} detected radiometric excursion episode(s).\n` +
+        `• **Forced Duct Airflow:** Anemometers recorded up to **${maxAnem > -Infinity ? maxAnem.toFixed(2) : 'N/A'} cm/s** convective flow inside the Saffire enclosure.\n` +
+        `• **Downstream Cygnus Smoke Response:** F2PCM Smoke Scattering reached **${peakSmoke > -Infinity ? peakSmoke.toFixed(3) : 'N/A'}** at **t=${peakSmokeTime}** (${smkEvents.length} breakthrough episode(s)).\n\n` +
+        `**2. AI / Engineering Hypotheses (Not Confirmed Root Causes):**\n` +
+        `• *Buoyancy-Free Forced Convection:* Without natural gravity buoyancy, forced ventilation (~20–30 cm/s) supplies oxidizer directly to the flame front, sustaining radiative heat release across the SIBAL cotton-fiberglass sample.\n` +
+        `• *Downstream Aerosol Transport:* Elevated F2PCM scattering indicates combustion soot or smoke-wire aerosols migrated from the Saffire duct into the pressurized Cygnus module.\n\n` +
+        `**3. Uncertainty & Sensor Limitations:**\n` +
+        `This EU telemetry table contains radiometer EU counts, anemometer speeds, igniter currents, and Cygnus environmental channels, but does not include O₂/CO₂ mole fraction species columns or high-speed flame camera imagery (archived separately in PSI-100).`,
+      uncertaintyRating: 'MEDIUM',
+      diagnosticData: {
+        subsystem: 'NASA PSI-100 SAFFIRE-III (Microgravity Combustion)',
+        hypotheses: [
+          {
+            title: 'Forced-Flow Sustained Flame Spread',
+            likelihood: 'Primary Physical Mechanism',
+            rationale: `Radiometric excursion (${peakRad > -Infinity ? peakRad.toFixed(1) : 'N/A'} EU) closely follows igniter energization under active anemometer airflow.`,
+          },
+          {
+            title: 'Microgravity Soot Aerosol Breakthrough',
+            likelihood: 'High Correlated Evidence',
+            rationale: `Cygnus F2PCM smoke scattering peaked at ${peakSmoke > -Infinity ? peakSmoke.toFixed(3) : 'N/A'} following active combustion.`,
+          },
+        ],
+        contingencyPlan: [
+          'In crewed spacecraft fire events, immediately secure module ventilation fans to remove forced convective oxygen transport.',
+          'Cross-check optical scattering alarms against CO/HCN electrochemical gas sensors before confirming suppressed smoldering.',
+          'Correlate EU radiometer spikes with PSI-100 Experimental Details & camera imagery to compute flame spread velocity.',
+        ],
+      },
+      suggestedPrompts: [
+        'Compare real NASA SAFFIRE-III data vs synthetic telemetry',
+        'Assess microgravity fire risks from Cygnus smoke scattering peak',
+        'Review synthetic AURA-SAT-4 mission health summary',
+      ],
+    };
+  }
 
   // 1. Overall health / status query
   if (q.includes('health') || q.includes('status') || q.includes('overview') || q.includes('summary')) {
@@ -190,19 +303,16 @@ export function generateRuleBasedResponse(
   const activeCount = anomalies.filter((a) => a.status === 'ACTIVE').length;
   return {
     text: `### Mission Flight Controller Response\n\n` +
-      `Regarding your inquiry: *"生${query}"*:\n\n` +
-      `The telemetry monitoring pipeline has evaluated **${telemetry.length} data samples** across 6 spacecraft subsystems. Currently, **${activeCount} anomalies** are active in the system.\n\n` +
-      `**Detection Methodology Active:**\n` +
-      `• Upper/Lower Engineering Thresholds (Redline & Yellow)\n` +
-      `• Rolling Z-Score Outlier Analysis (Window: 48 min, Threshold: 2.8σ)\n` +
-      `• Rate-of-Change ($\Delta v / \Delta t$) Derivative Limits\n\n` +
-      `To drill into specific spacecraft behavior, you can query specific subsystems like **"Explain the battery temperature anomaly"**, **"Check ADCS angular momentum"**, or **"Generate contingency report"**.`,
+      `Regarding your inquiry: *"${query}"*:\n\n` +
+      `• **Real NASA Data (PSI-100 SAFFIRE-III):** ${combustionData.length} aligned microgravity combustion frames and **${combustionAnomalies.length} combustion events** loaded.\n` +
+      `• **Synthetic Spacecraft Demo (AURA-SAT-4):** ${telemetry.length} orbital samples evaluated with **${activeCount} active anomalies**.\n\n` +
+      `You can ask about either dataset—for example: **"Analyze NASA SAFFIRE-III radiometer & ignition sequence"**, **"Assess microgravity fire risks from Cygnus smoke scattering peak"**, or **"Diagnose active battery temperature surge"**.`,
     uncertaintyRating: 'LOW',
     suggestedPrompts: [
+      'Analyze NASA SAFFIRE-III radiometer & ignition sequence',
+      'Compare real NASA SAFFIRE-III data vs synthetic telemetry',
       'Diagnose battery thermal surge',
-      'Explain reaction wheel angular rate spike',
       'Review mission health summary',
-      'Run solar panel degradation simulation',
     ],
   };
 }

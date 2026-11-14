@@ -10,6 +10,7 @@ import {
   Satellite,
   Radio,
   Clock,
+  Flame,
 } from 'lucide-react';
 import { useMission } from '../../context/MissionContext';
 
@@ -30,6 +31,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
       icon: Activity,
       badge: criticalCount > 0 ? `${criticalCount} alert` : undefined,
       badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
+    },
+    {
+      id: 'combustion',
+      label: 'NASA Combustion Data',
+      icon: Flame,
+      badge: 'PSI-100',
+      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
     },
     {
       id: 'explorer',

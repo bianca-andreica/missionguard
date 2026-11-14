@@ -18,7 +18,15 @@ import {
 } from '../../utils/ruleBasedAssistant';
 
 export const MissionAssistant: React.FC = () => {
-  const { anomalies, currentTelemetry, missionStats, selectedAnomaly } = useMission();
+  const {
+    anomalies,
+    currentTelemetry,
+    missionStats,
+    selectedAnomaly,
+    combustionData,
+    combustionAnomalies,
+    selectedCombustionAnomaly,
+  } = useMission();
 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -39,19 +47,17 @@ export const MissionAssistant: React.FC = () => {
         id: 'init-msg',
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString(),
-        text: `### MissionGuard Autonomous Flight Assistant Initialized\n\n` +
-          `Spacecraft telemetry audit is synchronized with **AURA-SAT-4** in Low Earth Orbit.\n\n` +
-          `**Current Telemetry Summary:**\n` +
-          `• **Mission Health:** ${missionStats.healthScore}%\n` +
-          `• **Orbit:** Orbit ${missionStats.currentOrbit} (${missionStats.orbitalPhase})\n` +
-          `• **Active Anomalies:** ${activeCritical.length} Critical, ${activeWarning.length} Warning\n\n` +
-          `Select a quick diagnostic prompt below or ask any telemetry inquiry.`,
+        text: `### MissionGuard Autonomous Flight & Fire-Safety Assistant\n\n` +
+          `Synchronized with two distinct telemetry pipelines:\n` +
+          `• **Real NASA Data (PSI-100 SAFFIRE-III):** ${combustionData.length} aligned microgravity combustion frames (${combustionAnomalies.length} detected events).\n` +
+          `• **Synthetic Spacecraft Demo (AURA-SAT-4):** Mission Health **${missionStats.healthScore}%**, Orbit ${missionStats.currentOrbit} (${missionStats.orbitalPhase}), **${activeCritical.length} Critical / ${activeWarning.length} Warning** active.\n\n` +
+          `Measured observations are always distinguished from AI-generated hypotheses and uncertainty notes.`,
         uncertaintyRating: 'LOW',
         suggestedPrompts: [
+          'Analyze NASA SAFFIRE-III radiometer & ignition sequence',
+          'Assess microgravity fire risks from Cygnus smoke scattering peak',
+          'Compare real NASA SAFFIRE-III data vs synthetic telemetry',
           'Diagnose active battery temperature surge',
-          'Evaluate ADCS angular rate disturbance',
-          'Explain solar array power generation curve',
-          'Generate contingency procedure for TT&C loss',
         ],
       },
     ];
@@ -72,6 +78,15 @@ export const MissionAssistant: React.FC = () => {
     }
   }, [selectedAnomaly]);
 
+  // If selectedCombustionAnomaly was set from NASA Combustion Data view, auto-suggest prompt
+  useEffect(() => {
+    if (selectedCombustionAnomaly) {
+      setInput(
+        `Analyze NASA SAFFIRE-III ${selectedCombustionAnomaly.channelName} event at t=${selectedCombustionAnomaly.elapsedLabel} (observed ${selectedCombustionAnomaly.observedValue})`
+      );
+    }
+  }, [selectedCombustionAnomaly]);
+
   const handleSend = async (queryText?: string) => {
     const query = queryText || input.trim();
     if (!query || isLoading) return;
@@ -88,6 +103,10 @@ export const MissionAssistant: React.FC = () => {
     setIsLoading(true);
 
     try {
+      const peakRad = combustionData.reduce((m, p) => (p.radiometerPeak !== null && p.radiometerPeak > m ? p.radiometerPeak : m), -Infinity);
+      const peakSmoke = combustionData.reduce((m, p) => (p.smokeScattering2 !== null && p.smokeScattering2 > m ? p.smokeScattering2 : m), -Infinity);
+      const maxAnem = combustionData.reduce((m, p) => Math.max(m, p.anemometer1 ?? -Infinity, p.anemometer2 ?? -Infinity), -Infinity);
+
       // Call server-side proxy endpoint
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
@@ -97,6 +116,14 @@ export const MissionAssistant: React.FC = () => {
           activeAnomalies: anomalies.filter((a) => a.status === 'ACTIVE'),
           missionStats,
           recentTelemetry: currentTelemetry.slice(-10),
+          combustionAnomalies,
+          combustionSummary: {
+            dataset: 'NASA PSI-100 SAFFIRE-III (DOI: 10.60555/040q-4h36)',
+            alignedFrames: combustionData.length,
+            peakRadiometerEU: peakRad > -Infinity ? peakRad : null,
+            peakSmokeScattering: peakSmoke > -Infinity ? peakSmoke : null,
+            maxAnemometerCms: maxAnem > -Infinity ? maxAnem : null,
+          },
         }),
       });
 
@@ -111,9 +138,9 @@ export const MissionAssistant: React.FC = () => {
             text: data.reply,
             uncertaintyRating: 'MEDIUM',
             suggestedPrompts: [
-              'What are the next ground commanding steps?',
-              'Inspect related telemetry in Explorer',
-              'Run a fault simulation for this scenario',
+              'Analyze NASA SAFFIRE-III radiometer & ignition sequence',
+              'Assess microgravity fire risks from Cygnus smoke scattering peak',
+              'Compare real NASA SAFFIRE-III data vs synthetic telemetry',
             ],
           };
           setMessages((prev) => [...prev, botMsg]);
@@ -125,12 +152,14 @@ export const MissionAssistant: React.FC = () => {
       console.warn('API call failed, using rule-based diagnostic engine fallback:', err);
     }
 
-    // High-fidelity aerospace rule-based fallback
+    // High-fidelity aerospace & combustion rule-based fallback
     const fallback = generateRuleBasedResponse(
       query,
       anomalies,
       currentTelemetry,
-      missionStats
+      missionStats,
+      combustionData,
+      combustionAnomalies
     );
 
     const botMsg: AssistantMessage = {
@@ -159,12 +188,12 @@ export const MissionAssistant: React.FC = () => {
         id: `init-${Date.now()}`,
         sender: 'assistant',
         timestamp: new Date().toLocaleTimeString(),
-        text: 'Telemetry conversation reset. Ready for flight controller queries.',
+        text: 'Telemetry & microgravity combustion conversation reset. Ready for queries.',
         uncertaintyRating: 'LOW',
         suggestedPrompts: [
+          'Analyze NASA SAFFIRE-III radiometer & ignition sequence',
+          'Compare real NASA SAFFIRE-III data vs synthetic telemetry',
           'Diagnose active battery temperature surge',
-          'Evaluate ADCS angular rate disturbance',
-          'Review mission health summary',
         ],
       },
     ]);

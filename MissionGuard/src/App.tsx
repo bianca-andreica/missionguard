@@ -9,6 +9,7 @@ import { ScenarioSimulator } from './components/simulator/ScenarioSimulator';
 import { MissionAssistant } from './components/assistant/MissionAssistant';
 import { ReportsView } from './components/reports/ReportsView';
 import { SettingsView } from './components/settings/SettingsView';
+import { NasaCombustionView } from './components/combustion/NasaCombustionView';
 import { Menu, X } from 'lucide-react';
 
 function DashboardContent() {
@@ -19,6 +20,10 @@ function DashboardContent() {
     overview: {
       title: 'Mission Operations Overview',
       subtitle: 'Real-time spacecraft telemetry streams, subsystem health score, and active anomaly alerts.',
+    },
+    combustion: {
+      title: 'NASA Microgravity Combustion Data (PSI-100)',
+      subtitle: 'Real NASA Physical Sciences Informatics SAFFIRE-III experimental telemetry, flame radiation, airflow, and fire-safety analysis.',
     },
     explorer: {
       title: 'Telemetry Explorer',
@@ -52,6 +57,8 @@ function DashboardContent() {
     switch (activeTab) {
       case 'overview':
         return <OverviewView />;
+      case 'combustion':
+        return <NasaCombustionView />;
       case 'explorer':
         return <TelemetryExplorer />;
       case 'anomalies':
