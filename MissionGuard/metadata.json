@@ -1,0 +1,6 @@
+{
+  "name": "MissionGuard - AI Spacecraft Telemetry & Anomaly Monitor",
+  "description": "AI-assisted spacecraft telemetry monitoring dashboard for NASA Space Apps Challenge 2026. Real-time anomaly detection, fault simulation, and engineering diagnostics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
