@@ -4,11 +4,13 @@
 
 **NASA Space Apps Challenge 2026 — Flame in Freefall**
 
-MissionGuard is a spacecraft telemetry monitoring and anomaly-detection platform designed to help mission operators identify unusual spacecraft behavior, investigate potential subsystem failures, and evaluate hypothetical fault scenarios.
+MissionGuard combines real NASA PSI-100 (SAFFIRE-III) microgravity combustion experimental telemetry with a separate synthetic Low Earth Orbit (LEO) spacecraft monitoring environment.
 
-The platform combines simulated Low Earth Orbit (LEO) telemetry, configurable anomaly-detection algorithms, interactive mission monitoring, and an AI-assisted diagnostic system to support spacecraft operations analysis.
+The platform provides interactive combustion telemetry visualization, anomaly detection, AI-assisted diagnostic hypotheses, and spacecraft fault simulation.
 
-> **Project Status:** MissionGuard is a NASA Space Apps Challenge prototype. It uses simulated telemetry and is intended for demonstration and educational purposes, not for real spacecraft operations.
+Real NASA experimental measurements and synthetic spacecraft demonstration data are kept explicitly separate to ensure scientific transparency.
+
+> **Project Status:** MissionGuard is an educational NASA Space Apps Challenge prototype. It is not intended for real spacecraft operations.
 
 ---
 
