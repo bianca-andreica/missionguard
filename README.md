@@ -43,12 +43,35 @@ The platform combines simulated Low Earth Orbit (LEO) telemetry, configurable an
 
 ### Prerequisites
 
-Make sure you have the following installed:
+Before installing MissionGuard, make sure you have the following:
 
-- Node.js (LTS version recommended)
-- npm
-- Internet connection for installing dependencies
-- Google Gemini API key (optional)
+- **Node.js (LTS version)** – Required to run the application.
+- **npm** – Included automatically with Node.js.
+- Internet connection for installing dependencies.
+- Google Gemini API key (optional).
+
+**Don't have Node.js installed?**
+
+Download it from the official website:
+
+[https://nodejs.org/en/download](https://nodejs.org/en/download)
+
+Choose the **LTS version** and download the installer for your operating system. For Windows, select **Windows Installer (.msi)**.
+
+Follow the installation wizard using the default settings. After installation, restart your terminal and verify that Node.js and npm are available:
+
+```bash
+node -v
+npm -v
+```
+
+**Note for Windows PowerShell users:** If the `npm -v` command fails because PowerShell blocks script execution due to execution policy restrictions, use the following command instead:
+
+```powershell
+npm.cmd -v
+```
+
+The same workaround applies to other npm commands. For example, use `npm.cmd install` instead of `npm install`.
 
 ### Installation
 
@@ -68,6 +91,11 @@ cd missionguard/MissionGuard
 
 ```bash
 npm install
+```
+Windows PowerShell users: If the command above fails due to script execution restrictions, use:
+
+```bash
+npm.cmd install
 ```
 
 ### Environment Configuration
@@ -97,6 +125,12 @@ Start the development server:
 npm run dev
 ```
 
+Windows PowerShell users: If the command above fails due to script execution restrictions, use:
+
+```bash
+npm.cmd run dev
+```
+
 Open the application in your browser:
 
 [http://localhost:3000](http://localhost:3000)
@@ -107,6 +141,11 @@ Build the application:
 
 ```bash
 npm run build
+```
+Windows PowerShell users: If the command above fails due to script execution restrictions, use:
+
+```bash
+npm.cmd run build
 ```
 
 For additional installation instructions, configuration details, API documentation, and troubleshooting, see the [Technical Documentation](MissionGuard/README.md).
